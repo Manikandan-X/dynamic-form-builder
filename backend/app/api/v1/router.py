@@ -8,6 +8,7 @@ from app.api.v1.routers.response import router as response_router
 from app.api.v1.routers.activity_log import router as activity_log_router
 from app.api.v1.routers.report import router as report_router
 from app.api.v1.routers.dashboard import router as dashboard_router
+from app.api.v1.routers.upload import router as upload_router
 
 api_router = APIRouter(
     prefix="/api/v1",
@@ -41,4 +42,8 @@ api_router.include_router(
 
 api_router.include_router(
     dashboard_router,
+)
+
+api_router.include_router(
+    upload_router,
 )
