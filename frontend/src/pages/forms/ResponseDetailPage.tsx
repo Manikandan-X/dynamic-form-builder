@@ -17,7 +17,7 @@ import type { FormFieldResponse, FormResponseDto, FormResponseResponseDto } from
 import { PageHeader, EmptyState } from "../../components/ui/Misc";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { FieldInput, type Values } from "./FillFormPage";
+import { FieldInput, coerceValueForSubmit, type Values } from "./FillFormPage";
 import { tokens } from "../../theme";
 import { format, parseISO } from "date-fns";
 
@@ -84,7 +84,7 @@ export default function ResponseDetailPage() {
     if (!form) return;
     setIsSaving(true);
     try {
-      const payload = { values: form.fields.map((f) => ({ field_id: f.id, value: values[f.id] ?? null })) };
+      const payload = { values: form.fields.map((f) => ({ field_id: f.id, value: coerceValueForSubmit(f, values[f.id]) })) };
       const res = await api.put<FormResponseResponseDto>(`/responses/${id}`, payload);
       setResponse(res.data);
       setIsEditing(false);

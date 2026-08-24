@@ -31,6 +31,21 @@ import { tokens } from "../../theme";
 
 export type Values = Record<number, unknown>;
 
+// The backend requires NUMBER and RATING field values to be a real JSON
+// number, not a numeric string — <input type="number"> always hands back
+// a string, so we coerce right before building the submit payload rather
+// than fighting the input's display value while the person is typing.
+export function coerceValueForSubmit(field: FormFieldResponse, raw: unknown): unknown {
+  if (raw === undefined || raw === null || raw === "") return null;
+
+  if (field.field_type === "NUMBER" || field.field_type === "RATING") {
+    const num = typeof raw === "number" ? raw : Number(raw);
+    return Number.isNaN(num) ? null : num;
+  }
+
+  return raw;
+}
+
 export function isConditionMet(field: FormFieldResponse, values: Values, fieldsByKey: Map<string, FormFieldResponse>): boolean {
   if (!field.is_conditional || !field.conditional_field_key || !field.conditional_operator) return true;
   const dependsOn = fieldsByKey.get(field.conditional_field_key);
@@ -129,7 +144,7 @@ export default function FillFormPage() {
 
     setIsSubmitting(true);
     try {
-      const payload = { values: visibleFields.map((f) => ({ field_id: f.id, value: values[f.id] ?? null })) };
+      const payload = { values: visibleFields.map((f) => ({ field_id: f.id, value: coerceValueForSubmit(f, values[f.id]) })) };
       const endpoint = submitAnonymously ? `/responses/public/forms/${id}` : `/responses/forms/${id}`;
       await api.post(endpoint, payload);
       push("Response submitted.", "success");
@@ -233,7 +248,7 @@ export function FieldInput({
           helperText={error ?? field.help_text ?? undefined}
           error={!!error}
           fullWidth
-          value={(value as string) ?? ""}
+          value={value === null || value === undefined ? "" : String(value)}
           onChange={(e) => onChange(e.target.value)}
         />
       );
@@ -401,9 +416,7 @@ function FileFieldInput({
           sx={{ alignSelf: "flex-start" }}
         >
           {isUploading ? "Uploading…" : "Choose file"}
-          <input type="file" hidden onChange={handleSelect}  
-          accept=".xlsx,.csv,.pdf,jpf,.jpeg,.png"
-          />
+          <input type="file" hidden onChange={handleSelect} />
         </Button>
       )}
 

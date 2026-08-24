@@ -128,8 +128,25 @@ class FormField(Base):
         "FormField",
         remote_side="FormField.id",
     )
-    
+
     response_details = relationship(
         "ResponseDetail",
         back_populates="field",
     )
+
+    # =====================================================
+    # Derived property — the API schemas (FormFieldResponse)
+    # serialize a `conditional_field_key` string, but this
+    # model only stores the relationship as a foreign key
+    # (`conditional_field_id`). Without this property,
+    # Pydantic's `from_attributes` conversion silently falls
+    # back to the schema field's default (None) on every
+    # response, because no attribute of this name exists on
+    # the model — so conditional fields always serialized
+    # with a blank `conditional_field_key`, even though the
+    # relationship was saved correctly.
+    # =====================================================
+
+    @property
+    def conditional_field_key(self) -> str | None:
+        return self.conditional_field.client_key if self.conditional_field else None
